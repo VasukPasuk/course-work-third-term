@@ -1,0 +1,298 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id Int @id @unique @default(autoincrement())
+
+  name           String
+  first_surname  String
+  second_surname String
+
+  email    String @unique
+  login    String @unique
+  password String
+
+  activated       Boolean @default(false)
+  activation_link String? @unique
+
+  avatar_src String? @unique
+
+  role Role @default(CUSTOMER)
+
+  created_at             DateTime               @default(now())
+  updated_at             DateTime               @updatedAt
+  User_Favourite_Product UserFavouriteProduct[]
+  Review                 Review[]
+
+  cart Cart?
+
+  @@map("users")
+}
+
+model Tag {
+  id Int @unique @default(autoincrement())
+
+  name        String  @id @unique
+  description String?
+
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  ProductHaveTag ProductHasTag[]
+
+  @@map("tags")
+}
+
+model Product {
+  id Int @unique @default(autoincrement())
+
+  name        String  @id @unique
+  discount    Int     @default(0)
+  popular     Boolean @default(false)
+  description String
+  rating      Int     @default(0)
+  published   Boolean @default(false)
+  price       Int
+  photos      Photo[]
+
+  category      Category? @relation(fields: [category_name], references: [name], onDelete: SetNull)
+  category_name String?
+
+  User_Favourite_Product UserFavouriteProduct[]
+  ProductHaveTag         ProductHasTag[]
+
+  order_items OrderItem[]
+
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  CartItem   CartItem[]
+  Review     Review[]
+
+  @@map("products")
+}
+
+model ProductHasTag {
+  product      Product @relation(fields: [product_name], references: [name], onDelete: Cascade)
+  product_name String
+
+  tag      Tag    @relation(fields: [tag_name], references: [name], onDelete: Cascade)
+  tag_name String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@id([tag_name, product_name])
+  @@map("products_have_Tags")
+}
+
+model UserFavouriteProduct {
+  id Int @id @default(autoincrement())
+
+  product      Product @relation(fields: [product_name], references: [name], onDelete: Cascade)
+  product_name String
+
+  user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id Int
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([user_id, product_name])
+  @@map("users_favourite_products")
+}
+
+model Review {
+  id Int @id @default(autoincrement())
+
+  product      Product? @relation(fields: [product_name], references: [name], onDelete: SetNull)
+  product_name String?
+
+  text String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+
+  @@map("reviews")
+}
+
+model Category {
+  id Int @unique @default(autoincrement())
+
+  name        String  @id @unique
+  description String?
+
+  products Product[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Order {
+  id Int @id @default(autoincrement())
+
+  // Обо'вязкові параметри замовлення
+  phone    String
+  email    String
+  name     String
+  surname  String
+  region   String
+  locality String
+
+  comment String? @default("")
+
+  // Опція при способі оплати юр. особи
+  EDRPOY_CODE  String @default("")
+  legal_entity String @default("")
+
+  // Опції при доставкою кур'єром
+  street     String @default("")
+  floor      String @default("")
+  house      String @default("")
+  appartment String @default("")
+
+  // Типи замовлення та доставки
+  delivery_type String
+  payment_type  String
+
+  department_address String @default("")
+
+  total_price Int
+  total_items Int
+
+  items OrderItem[]
+
+  status OrderStatus @default(PROCESSING)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id Int @id @default(autoincrement())
+
+  order   Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [product_name], references: [name], onDelete: Cascade)
+  color   Color   @relation(fields: [color_name], references: [name], onDelete: Cascade)
+
+  order_id     Int
+  product_name String
+  color_name   String
+
+  amount Int @default(1)
+
+  plastic Plastic @default(CoPET)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("order_items")
+}
+
+model Cart {
+  id Int @id @default(autoincrement())
+
+  user        User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id     Int        @unique
+  items       CartItem[]
+  total_items Int
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("carts")
+}
+
+model CartItem {
+  id Int @id @default(autoincrement())
+
+  cart         Cart     @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  cart_id      Int
+  product      Product  @relation(fields: [product_name], references: [name], onDelete: Cascade)
+  product_name String
+  color        Color    @relation(fields: [color_name], references: [name], onDelete: Cascade)
+  color_name   String
+  amount       Int
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("cart_items")
+}
+
+model Photo {
+  id   Int    @id @default(autoincrement())
+  name String @unique @default(uuid())
+  src  String @unique
+
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  product      Product  @relation(fields: [product_name], references: [name], onDelete: Cascade)
+  product_name String
+
+  @@map("photos")
+}
+
+model Color {
+  id Int @unique @default(autoincrement())
+
+  name String @id @unique
+  hex  String @unique
+
+  order_items OrderItem[]
+
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  CartItem   CartItem[]
+
+  @@map("colors")
+}
+
+model PurchaseHistory {
+  id Int @id @default(autoincrement())
+
+  phone_number   String
+  email          String
+  name           String
+  first_surname  String
+  second_surname String
+  product_names  String
+  productPrice   Int
+  product_amount Int
+
+  comment      String?
+  payment_type String
+
+  created_at DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PROCESSING
+  FULFILLED
+}
+
+enum Plastic {
+  CoPET
+  PLA
+}
