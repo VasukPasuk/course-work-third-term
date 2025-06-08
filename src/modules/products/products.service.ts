@@ -165,23 +165,4 @@ export class ProductsService {
       },
     });
   }
-
-  async getAdminCatalog(pagination: PaginationParams) {
-    const [items, count] = await Promise.all([
-      this.prisma.product.findMany({
-        skip: pagination.offset,
-        take: pagination.limit,
-        include: {
-          photos: {
-            take: 1,
-          },
-        },
-      }),
-      this.prisma.product.count(),
-    ]);
-    return {
-      items,
-      count,
-    };
-  }
 }

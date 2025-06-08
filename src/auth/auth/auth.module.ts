@@ -16,13 +16,21 @@ import { LocalStrategy } from '../../common/strategies/local.strategy';
     JWTModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('ACCESS_TOKEN_SECRET_KEY'), // Secret key
-        signOptions: { expiresIn: configService.get<string>('ACCESS_TOKEN_LIFETIME') }, // Time limit
+        secret: configService.get<string>('ACCESS_TOKEN_SECRET_KEY'),
+        signOptions: {
+          expiresIn: configService.get<string>('ACCESS_TOKEN_LIFETIME'),
+        },
       }),
       inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PrismaService, JWTService, JwtStrategy, LocalStrategy],
+  providers: [
+    AuthService,
+    PrismaService,
+    JWTService,
+    JwtStrategy,
+    LocalStrategy,
+  ],
 })
 export class AuthModule {}

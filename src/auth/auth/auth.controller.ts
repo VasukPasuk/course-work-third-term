@@ -37,12 +37,6 @@ export class AuthController {
     return { access_token, user: { ...user } };
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('test')
-  test(@User() user: UserPayload) {
-    return user
-  }
-
   @Post('register')
   async register(@Body() registerUserDto: CreateUserDto) {
     return this.authService.register(registerUserDto);
